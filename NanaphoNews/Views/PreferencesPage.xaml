@@ -1,0 +1,220 @@
+﻿<phone:PhoneApplicationPage 
+    x:Class="NanaphoNews.Views.PreferencesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+    xmlns:ic="clr-namespace:Microsoft.Expression.Interactivity.Core;assembly=Microsoft.Expression.Interactions" 
+    xmlns:helpers="clr-namespace:Helpers"
+    xmlns:sampleData="clr-namespace:NanaphoNews.SampleData"
+    xmlns:converters="clr-namespace:NanaphoNews.Converters"
+    xmlns:localControls="clr-namespace:NanaphoNews.LocalControls"
+    mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="768"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    shell:SystemTray.IsVisible="True"
+    shell:SystemTray.Opacity="0.5"
+    toolkit:TiltEffect.IsTiltEnabled="True"
+    DataContext="{Binding Source={StaticResource Locator}, Path=PreferencesPageViewModel}"
+    >
+
+    <!-- システムトレイ -->
+    <shell:SystemTray.ProgressIndicator>
+        <shell:ProgressIndicator
+            IsIndeterminate="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}"
+            />
+    </shell:SystemTray.ProgressIndicator>
+
+    <!-- リソース -->
+    <phone:PhoneApplicationPage.Resources>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <converters:ToggleSwitchContentConverter x:Key="ToggleSwitchContentConverter"/>
+        <helpers:AppAttributes x:Key="AppAttributes"/>
+    </phone:PhoneApplicationPage.Resources>
+
+    <!-- ページ切り替え効果 -->
+    <toolkit:TransitionService.NavigationInTransition>
+        <toolkit:NavigationInTransition>
+            <toolkit:NavigationInTransition.Backward>
+                <toolkit:SlideTransition Mode="SlideRightFadeIn"/>
+            </toolkit:NavigationInTransition.Backward>
+            <toolkit:NavigationInTransition.Forward>
+                <toolkit:SlideTransition Mode="SlideLeftFadeIn"/>
+            </toolkit:NavigationInTransition.Forward>
+        </toolkit:NavigationInTransition>
+    </toolkit:TransitionService.NavigationInTransition>
+    <toolkit:TransitionService.NavigationOutTransition>
+        <toolkit:NavigationOutTransition>
+            <toolkit:NavigationOutTransition.Backward>
+                <toolkit:SlideTransition Mode="SlideRightFadeOut"/>
+            </toolkit:NavigationOutTransition.Backward>
+            <toolkit:NavigationOutTransition.Forward>
+                <toolkit:SlideTransition Mode="SlideLeftFadeOut"/>
+            </toolkit:NavigationOutTransition.Forward>
+        </toolkit:NavigationOutTransition>
+    </toolkit:TransitionService.NavigationOutTransition>
+
+    <!-- ルート -->
+    <Grid x:Name="LayoutRoot" Background="Transparent" Margin="0,10,0,0">
+        <!-- ピボット -->
+        <controls:Pivot Title="{Binding Path=Resources.PreferencesPage_PageHeaderTitle, Source={StaticResource LocalizedResources}}">
+            <!-- ピボット:タイトル -->
+            <controls:Pivot.TitleTemplate>
+                <DataTemplate>
+                    <TextBlock
+                        FontWeight="Bold"
+                        Text="{Binding}"
+                        />
+                </DataTemplate>
+            </controls:Pivot.TitleTemplate>
+
+            <!-- ピボット:ヘッダー -->
+            <controls:Pivot.HeaderTemplate>
+                <DataTemplate>
+                    <TextBlock
+                        Margin="9,0,0,0"
+                        FontSize="50"
+                        Style="{StaticResource PhoneTextTitle1Style}"
+                        Text="{Binding}"
+                        />
+                </DataTemplate>
+            </controls:Pivot.HeaderTemplate>
+
+            <!-- ピボット:アイテム プッシュ通知 -->
+            <controls:PivotItem Header="{Binding Path=Resources.PreferencesPage_PivotItem_Notification, Source={StaticResource LocalizedResources}}">
+                <StackPanel>
+                    <!-- プッシュ通知の受け取り -->
+                    <Grid Margin="{StaticResource PhoneMargin}">
+                        <StackPanel Orientation="Vertical">
+                            <toolkit:ToggleSwitch
+                                x:Name="ReceiveNotificationToggleSwitch"
+                                Header="{Binding Path=Resources.PreferencesPage_Notification_ReceiveNotification, Source={StaticResource LocalizedResources}}"
+                                IsChecked="{Binding IsReceiveNotification, Mode=TwoWay}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
+                                Content="{Binding IsReceiveNotification, Converter={StaticResource ToggleSwitchContentConverter}}"
+                                >
+                                <i:Interaction.Triggers>
+                                    <i:EventTrigger EventName="Checked">
+                                        <i:InvokeCommandAction
+                                        Command="{Binding ReceiveNotificationCheckedCommand}"
+                                        />
+                                    </i:EventTrigger>
+                                    <i:EventTrigger EventName="Unchecked">
+                                        <i:InvokeCommandAction
+                                        Command="{Binding ReceiveNotificationUncheckedCommand}"
+                                        />
+                                    </i:EventTrigger>
+                                </i:Interaction.Triggers>
+                            </toolkit:ToggleSwitch>
+                            <TextBlock
+                                Style="{StaticResource PhoneTextNormalStyle}"
+                                TextWrapping="Wrap"
+                                Text="{Binding Path=Resources.PreferencesPage_Notification_ReceiveNotificationDesc, Source={StaticResource LocalizedResources}}"
+                                />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </controls:PivotItem>
+
+            <!-- ピボット:アイテム アプリ -->
+            <controls:PivotItem Header="{Binding Path=Resources.PreferencesPage_PivotItem_AboutTheApplication, Source={StaticResource LocalizedResources}}">
+                <StackPanel>
+                    <Grid Margin="{StaticResource PhoneMargin}">
+                        <TextBlock
+                            FontSize="36"
+                            Style="{StaticResource PhoneTextLargeStyle}"
+                            Text="{Binding Path=Resources.PreferencesPage_ApplicationTitle, Source={StaticResource LocalizedResources}}"
+                            />
+                    </Grid>
+                    <Rectangle Margin="{StaticResource PhoneMargin}"/>
+                    <Grid Margin="{StaticResource PhoneMargin}">
+                        <StackPanel>
+                            <TextBlock
+                                Style="{StaticResource PhoneTextLargeStyle}"
+                                FontSize="{StaticResource PhoneFontSizeMedium}"
+                                Text="{Binding Path=Resources.PreferencesPage_ApplicationVersion, Source={StaticResource LocalizedResources}}"
+                                />
+                            <TextBlock
+                                Margin="24,0,0,0"
+                                Padding="{StaticResource PhoneMargin}"
+                                Style="{StaticResource PhoneTextSmallStyle}"
+                                Text="{Binding Source={StaticResource AppAttributes}, Path=Version}"
+                                />
+                        </StackPanel>
+                    </Grid>
+                    <Grid Margin="{StaticResource PhoneMargin}">
+                        <StackPanel>
+                            <TextBlock
+                                Style="{StaticResource PhoneTextLargeStyle}"
+                                FontSize="{StaticResource PhoneFontSizeMedium}"
+                                Text="{Binding Path=Resources.PreferencesPage_TwitterAccountForSupport, Source={StaticResource LocalizedResources}}"
+                                />
+                            <Grid Margin="{StaticResource PhoneMargin}">
+                                <HyperlinkButton
+                                    x:Name="TweetAboutTheApp"
+                                    Padding="{StaticResource PhoneMargin}"
+                                    HorizontalAlignment="Left"
+                                    HorizontalContentAlignment="Left"
+                                    Style="{StaticResource HyperlinkEmptyStyle}"
+                                    Margin="0,0,0,-20"
+                                    >
+                                    <localControls:HeaderedContentControl
+                                        Style="{StaticResource SinglelineHyperlinkStyle}"
+                                        Content="{Binding Path=Resources.PreferencesPage_TwitterAccountForSupportValue, Source={StaticResource LocalizedResources}}"
+                                        />
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="Tap">
+                                            <i:InvokeCommandAction
+                                                Command="{Binding TweetAboutTheAppTapCommand}"
+                                                />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </HyperlinkButton>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                    <Grid Margin="{StaticResource PhoneMargin}">
+                        <StackPanel>
+                            <TextBlock
+                                Style="{StaticResource PhoneTextLargeStyle}"
+                                FontSize="{StaticResource PhoneFontSizeMedium}"
+                                Text="{Binding Path=Resources.PreferencesPage_ApplicationDetailsAndReviews, Source={StaticResource LocalizedResources}}"
+                                />
+                            <Grid Margin="{StaticResource PhoneMargin}">
+                                <HyperlinkButton
+                                    x:Name="ReviewTheApp"
+                                    Padding="{StaticResource PhoneMargin}"
+                                    HorizontalAlignment="Left"
+                                    HorizontalContentAlignment="Left"
+                                    Style="{StaticResource HyperlinkEmptyStyle}"
+                                    Margin="0,0,0,-20"
+                                    >
+                                    <localControls:HeaderedContentControl
+                                        Style="{StaticResource SinglelineHyperlinkStyle}"
+                                        Content="{Binding Path=Resources.PreferencesPage_GotoApplicationDetails, Source={StaticResource LocalizedResources}}"
+                                        />
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="Tap">
+                                            <i:InvokeCommandAction
+                                                Command="{Binding ReviewTheAppTapCommand}"
+                                                />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </HyperlinkButton>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </controls:PivotItem>
+        </controls:Pivot>
+    </Grid>
+
+</phone:PhoneApplicationPage>

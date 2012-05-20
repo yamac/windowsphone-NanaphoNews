@@ -1,0 +1,6 @@
+*/Bin
+*/obj
+*/SubmissionInfo
+*/PerformanceLogs
+*.suo
+*/*.csproj.user

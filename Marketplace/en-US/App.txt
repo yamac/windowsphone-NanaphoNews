@@ -1,0 +1,12 @@
+Desc1     : nanapho news
+Desc2     :
+'nanapho news' is a news reader application for 'nanapho' that is Windows Phone news website.
+
+Enabling push notification, you can receive nanapho's updates. Pin this app to your start screen to receive tile notification.
+
+*NEWS ARTICLE IS DISPLAYED IN JAPANESE.
+
+Versions
+1.0.0.0: First release.
+
+Keywords  : nanapho;news;windows;phone

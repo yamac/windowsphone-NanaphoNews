@@ -1,0 +1,4 @@
+Title     : ななふぉ速報
+Category1 : ニュース＆天気
+Category2 : 地域＆国内
+Deeplink  : 
