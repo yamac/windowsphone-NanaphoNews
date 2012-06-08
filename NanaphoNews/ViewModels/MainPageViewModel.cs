@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Linq;
+using System.Threading;
 using System.Windows.Input;
-using NanaphoNews.Data;
+using Microsoft.Phone.Controls;
+using Microsoft.Phone.Shell;
 using NanaphoNews.Navigation;
 using NanaphoNews.Services;
-using Microsoft.Phone.Controls;
 using SimpleMvvmToolkit;
-using Microsoft.Phone.Shell;
-using System.Linq;
 
 namespace NanaphoNews.ViewModels
 {
@@ -44,16 +44,16 @@ namespace NanaphoNews.ViewModels
 
         private void OnInitializeCompleted(object sender, NotificationEventArgs e)
         {
-            ObservableCollection<MainPagePivotItemViewModel> items = new ObservableCollection<MainPagePivotItemViewModel>();
-            MainPagePivotItemViewModel vm;
-            vm = new MainPagePivotItemViewModel(app, navigator, service);
-            vm.ErrorNotice += OnErrorNotice;
-            items.Add(vm);
-            PivotItems = items;
-            initialized = true;
             Helpers.AppSettings.AddOrUpdateValue(Constants.AppKey.LastUpdate, DateTime.Now);
-            PivotItems[0].LoadFeedItems(true, false);
-            PivotItemSelectedIndex = 0;
+
+            string uuid = Helpers.AppSettings.GetValueOrDefault<string>(Constants.AppKey.NotificationUuid, null);
+            if (uuid != null)
+            {
+                CultureInfo uicc = Thread.CurrentThread.CurrentUICulture;
+                service.UpdateNotificationChannel(uuid, Helpers.AppAttributes.Version, uicc.Name, null, true, UpdateNotificationChannelCompleted);
+            }
+
+            LoadPivotItem();
 
             ShellTile shellTile = ShellTile.ActiveTiles.First();
             StandardTileData shellTileData = new StandardTileData()
@@ -83,8 +83,6 @@ namespace NanaphoNews.ViewModels
          * Properties *
          **************/
 
-        private bool initialized = false;
-
         private bool _IsBusy = false;
         public bool IsBusy
         {
@@ -97,27 +95,15 @@ namespace NanaphoNews.ViewModels
             }
         }
 
-        private ObservableCollection<MainPagePivotItemViewModel> _PivotItems = new ObservableCollection<MainPagePivotItemViewModel>();
-        public ObservableCollection<MainPagePivotItemViewModel> PivotItems
+        private ChannelsUpdatesListViewModel _NanaphoChannelsUpdatesListViewModel = null;
+        public ChannelsUpdatesListViewModel NanaphoChannelsUpdatesListViewModel
         {
-            get { return _PivotItems; }
+            get { return _NanaphoChannelsUpdatesListViewModel; }
             set
             {
-                if (_PivotItems == value) return;
-                _PivotItems = value;
-                NotifyPropertyChanged(m => PivotItems);
-            }
-        }
-
-        private int _PivotItemSelectedIndex = -1;
-        public int PivotItemSelectedIndex
-        {
-            get { return _PivotItemSelectedIndex; }
-            set
-            {
-                if (_PivotItemSelectedIndex == value) return;
-                _PivotItemSelectedIndex = value;
-                NotifyPropertyChanged(m => PivotItemSelectedIndex);
+                if (_NanaphoChannelsUpdatesListViewModel == value) return;
+                _NanaphoChannelsUpdatesListViewModel = value;
+                NotifyPropertyChanged(m => NanaphoChannelsUpdatesListViewModel);
             }
         }
 
@@ -128,19 +114,6 @@ namespace NanaphoNews.ViewModels
          * Commands *
          ************/
 
-        public ICommand PivotSelectionChangedCommand
-        {
-            get
-            {
-                return new DelegateCommand<Pivot>(
-                (e) =>
-                {
-                    (e.SelectedItem as MainPagePivotItemViewModel).LoadFeedItems(false, false);
-                }
-                );
-            }
-        }
-
         public ICommand RefreshCommand
         {
             get
@@ -148,7 +121,7 @@ namespace NanaphoNews.ViewModels
                 return new DelegateCommand<Pivot>(
                 (e) =>
                 {
-                    (e.SelectedItem as MainPagePivotItemViewModel).LoadFeedItems(true, false);
+                    NanaphoChannelsUpdatesListViewModel.LoadFeedItems(true, false);
                 }
                 ,
                 (e) =>
@@ -157,15 +130,11 @@ namespace NanaphoNews.ViewModels
                     {
                         return false;
                     }
-                    if (!initialized)
-                    {
-                        return true;
-                    }
-                    if (e.SelectedItem == null)
+                    if (NanaphoChannelsUpdatesListViewModel == null)
                     {
                         return false;
                     }
-                    return !(e.SelectedItem as MainPagePivotItemViewModel).IsBusy;
+                    return !NanaphoChannelsUpdatesListViewModel.IsBusy;
                 }
                 );
             }
@@ -196,12 +165,27 @@ namespace NanaphoNews.ViewModels
          * Methods *
          ***********/
 
+        private void LoadPivotItem()
+        {
+            if (NanaphoChannelsUpdatesListViewModel == null)
+            {
+                NanaphoChannelsUpdatesListViewModel =
+                    new ChannelsUpdatesListViewModel(app, navigator, service);
+                NanaphoChannelsUpdatesListViewModel.ErrorNotice += OnErrorNotice;
+                NanaphoChannelsUpdatesListViewModel.LoadFeedItems(true, false);
+            }
+        }
+
         #endregion
 
         #region Completion Callbacks
         /************************
          * Completion Callbacks *
          ************************/
+
+        void UpdateNotificationChannelCompleted(NanaphoNewsService.UpdateNotificationChannelResult result, Exception error)
+        {
+        }
 
         #endregion
 

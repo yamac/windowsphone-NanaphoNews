@@ -1,29 +1,24 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.Phone.Controls;
 using NanaphoNews.Data;
 using NanaphoNews.Navigation;
 using NanaphoNews.Services;
-using Microsoft.Phone.Controls;
 using SimpleMvvmToolkit;
-using System.Globalization;
-using System.Threading;
-using Microsoft.Phone.Tasks;
 
 namespace NanaphoNews.ViewModels
 {
-    public class MainPagePivotItemViewModel : ViewModelBase<MainPagePivotItemViewModel>
+    public class ChannelsUpdatesListViewModel : ViewModelBase<ChannelsUpdatesListViewModel>
     {
         #region Initialization and Cleanup
         /******************************
          * Initialization and Cleanup *
          ******************************/
 
-        public MainPagePivotItemViewModel() { }
+        public ChannelsUpdatesListViewModel() { }
 
-        public MainPagePivotItemViewModel(PhoneApplicationFrame app, INavigator navigator, INanaphoNewsService service)
+        public ChannelsUpdatesListViewModel(PhoneApplicationFrame app, INavigator navigator, INanaphoNewsService service)
         {
             this.app = app;
             this.navigator = navigator;
@@ -103,7 +98,7 @@ namespace NanaphoNews.ViewModels
          * Commands *
          ************/
 
-        public ICommand TheListSelectorSelectionChangedCommand
+        public ICommand ListSelectionChangedCommand
         {
             get
             {
@@ -111,9 +106,7 @@ namespace NanaphoNews.ViewModels
                 {
                     if (e.SelectedItem != null)
                     {
-                        WebBrowserTask task = new WebBrowserTask();
-                        task.Uri = new Uri((e.SelectedItem as FeedItem).Link, UriKind.Absolute);
-                        task.Show();
+                        NavigationService.Navigate(new Uri("/Views/WebPage.xaml", UriKind.Relative), e.SelectedItem);
                         e.SelectedItem = null;
                     }
                 }
@@ -121,7 +114,7 @@ namespace NanaphoNews.ViewModels
             }
         }
 
-        public ICommand TheListSelectorStretchingBottomCommand
+        public ICommand ListStretchingBottomCommand
         {
             get
             {
@@ -165,13 +158,6 @@ namespace NanaphoNews.ViewModels
             IsBusy = true;
 
             service.GetFeedItems(page, LoadFeedItemsCompleted);
-
-            string uuid = Helpers.AppSettings.GetValueOrDefault<string>(Constants.AppKey.NotificationUuid, null);
-            if (uuid != null && page == 1)
-            {
-                CultureInfo uicc = Thread.CurrentThread.CurrentUICulture;
-                service.UpdateNotificationChannel(uuid, uicc.Name, null, true, UpdateNotificationChannelCompleted);
-            }
         }
 
         #endregion
@@ -202,10 +188,6 @@ namespace NanaphoNews.ViewModels
                 FeedItems.Add(item);
             }
             HasNextPage = result.HasNext;
-        }
-
-        protected void UpdateNotificationChannelCompleted(NanaphoNewsService.UpdateNotificationChannelResult result, Exception error)
-        {
         }
 
         #endregion
