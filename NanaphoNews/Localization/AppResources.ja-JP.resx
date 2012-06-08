@@ -159,8 +159,11 @@
   <data name="PreferencesPage_ApplicationVersion" xml:space="preserve">
     <value>アプリのバージョン</value>
   </data>
+  <data name="PreferencesPage_Busy" xml:space="preserve">
+    <value>処理中...</value>
+  </data>
   <data name="PreferencesPage_Error_NotificationRegistrationFailed" xml:space="preserve">
-    <value>プッシュ通知を登録できませんでした。しばらくしてから再試行してください。</value>
+    <value>プッシュ通知を登録できませんでした。ネットワークが接続された状態で再試行してください。</value>
   </data>
   <data name="PreferencesPage_GotoApplicationDetails" xml:space="preserve">
     <value>アプリの詳細を見る</value>
@@ -169,7 +172,9 @@
     <value>プッシュ通知</value>
   </data>
   <data name="PreferencesPage_Notification_ReceiveNotificationDesc" xml:space="preserve">
-    <value>「ななふぉ」の新着情報をタイルとトースト通知で受け取ることができます。タイル通知を受け取るには電話機のアプリ一覧で「ななふぉ速報」を長押ししてスタート画面に追加してください。</value>
+    <value>「ななふぉ」の新着情報をタイルとトースト通知で受け取ることができます。タイル通知を受け取るには電話機のアプリ一覧で「ななふぉ速報」を長押ししてスタート画面に追加してください。
+
+※プッシュ通知の設定はネットワークが接続された状態で行ってください。</value>
   </data>
   <data name="PreferencesPage_Notification_ReceiveNotification_ConfirmationCaption" xml:space="preserve">
     <value>プッシュ通知の確認</value>
