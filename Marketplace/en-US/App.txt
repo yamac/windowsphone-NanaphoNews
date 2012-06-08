@@ -4,9 +4,11 @@ Desc2     :
 
 Enabling push notification, you can receive nanapho's updates. Pin this app to your start screen to receive tile notification.
 
-*NEWS ARTICLE IS DISPLAYED IN JAPANESE.
+*SOME CONTENTS SUCH AS BLOG TITLES AND BLOG ARTICLES ARE DISPLAYED IN JAPANESE.
+*PUSH NOTIFICATION FUNCTIONALITY IS BETA VERSION. IT MAY NOT WORK CORRECTLY.
 
 Versions
+1.1.0.0: Improved push notification functionality. Article is opened in an internal browser.
 1.0.0.0: First release.
 
-Keywords  : nanapho;news;windows;phone
+Keywords  : nanapho;news;windows;phone;‚È‚È‚Ó‚§
