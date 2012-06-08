@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.ObjectModel;
-using System.Windows.Input;
-using NanaphoNews.Data;
-using NanaphoNews.Navigation;
-using NanaphoNews.Services;
-using Microsoft.Phone.Controls;
-using SimpleMvvmToolkit;
-using Microsoft.Phone.Tasks;
-using System.Windows;
 using System.Globalization;
 using System.Threading;
+using System.Windows;
+using System.Windows.Input;
+using Microsoft.Phone.Controls;
+using Microsoft.Phone.Tasks;
+using NanaphoNews.Services;
+using SimpleMvvmToolkit;
 
 namespace NanaphoNews.ViewModels
 {
@@ -133,9 +130,9 @@ namespace NanaphoNews.ViewModels
                     {
                         var result =
                             MessageBox.Show(
-                            Localization.AppResources.PreferencesPage_Notification_ReceiveNotification_ConfirmationText,
-                            Localization.AppResources.PreferencesPage_Notification_ReceiveNotification_ConfirmationCaption,
-                            MessageBoxButton.OKCancel
+                                Localization.AppResources.PreferencesPage_Notification_ReceiveNotification_ConfirmationText,
+                                Localization.AppResources.PreferencesPage_Notification_ReceiveNotification_ConfirmationCaption,
+                                MessageBoxButton.OKCancel
                             );
                         if (result.Equals(MessageBoxResult.OK))
                         {
@@ -178,7 +175,7 @@ namespace NanaphoNews.ViewModels
         {
             IsBusy = true;
             CultureInfo uicc = Thread.CurrentThread.CurrentUICulture;
-            service.RegisterNotificationChannel(uicc.Name, RegisterNotificationChannelCompleted);
+            service.RegisterNotificationChannel(Helpers.AppAttributes.Version, uicc.Name, RegisterNotificationChannelCompleted);
         }
 
         public void UnregisterNotificationChannel()
