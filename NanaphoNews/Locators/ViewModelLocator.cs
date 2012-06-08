@@ -8,6 +8,14 @@ namespace NanaphoNews.Locators
 {
     public class ViewModelLocator
     {
+        private PhoneApplicationFrame TheApp
+        {
+            get
+            {
+                return App.Current.RootVisual as PhoneApplicationFrame;
+            }
+        }
+
         private INavigator _TheNavigator;
         private INavigator TheNavigator
         {
@@ -38,10 +46,15 @@ namespace NanaphoNews.Locators
         {
             get
             {
-                PhoneApplicationFrame app = App.Current.RootVisual as PhoneApplicationFrame;
-                INavigator navigator = TheNavigator;
-                INanaphoNewsService service = TheNanaphoNewsService;
-                return new MainPageViewModel(app, navigator, service);
+                return new MainPageViewModel(TheApp, TheNavigator, TheNanaphoNewsService);
+            }
+        }
+
+        public WebPageViewModel WebPageViewModel
+        {
+            get
+            {
+                return new WebPageViewModel();
             }
         }
 
@@ -49,10 +62,7 @@ namespace NanaphoNews.Locators
         {
             get
             {
-                PhoneApplicationFrame app = App.Current.RootVisual as PhoneApplicationFrame;
-                INavigator navigator = TheNavigator;
-                INanaphoNewsService service = TheNanaphoNewsService;
-                return new PreferencesPageViewModel(app, navigator, service);
+                return new PreferencesPageViewModel(TheApp, TheNavigator, TheNanaphoNewsService);
             }
         }
     }
