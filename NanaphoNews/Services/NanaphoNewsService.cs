@@ -25,10 +25,14 @@ namespace NanaphoNews.Services
 #endif
             private const string FeedBase = Base + "feed/";
             private const string DeviceBase = SecureBase + "device/";
+            private const string DeviceBaseFallback = Base + "device/";
             public const string FeedItems = FeedBase + "items";
             public const string DeviceRegister = DeviceBase + "register";
             public const string DeviceUnregister = DeviceBase + "unregister";
             public const string DeviceUpdate = DeviceBase + "update";
+            public const string DeviceRegisterFallback = DeviceBaseFallback + "register";
+            public const string DeviceUnregisterFallback = DeviceBaseFallback + "unregister";
+            public const string DeviceUpdateFallback = DeviceBaseFallback + "update";
         }
 
         private static class Notification
@@ -121,18 +125,20 @@ namespace NanaphoNews.Services
             public _Response Response { get; set; }
         }
 
-        public void RegisterNotificationChannel(string langCode, Action<RegisterNotificationChannelResult, Exception> callback)
+        public void RegisterNotificationChannel(string version, string langCode, Action<RegisterNotificationChannelResult, Exception> callback)
         {
             System.Diagnostics.Debug.WriteLine("RegisterNotificationChannel");
             bool isNewChannel = false;
 
             HttpNotificationChannel notificationChannel;
             notificationChannel = HttpNotificationChannel.Find(Notification.ChannelName);
-            if (notificationChannel == null)
+            if (notificationChannel != null)
             {
-                isNewChannel = true;
-                notificationChannel = new HttpNotificationChannel(Notification.ChannelName);
+                notificationChannel.Close();
             }
+
+            isNewChannel = true;
+            notificationChannel = new HttpNotificationChannel(Notification.ChannelName);
 
             notificationChannel.ConnectionStatusChanged += (sender, e) =>
             {
@@ -156,6 +162,10 @@ namespace NanaphoNews.Services
                 System.Diagnostics.Debug.WriteLine(uri);
                 string postDataStr;
                 postDataStr = "mpns_channel_url=" + HttpUtility.UrlEncode(e.ChannelUri.ToString());
+                if (version != null)
+                {
+                    postDataStr += "&version=" + version;
+                }
                 if (langCode != null)
                 {
                     postDataStr += "&language_code=" + langCode;
@@ -169,55 +179,125 @@ namespace NanaphoNews.Services
                 Observable
                 .FromAsyncPattern<Stream>(req.BeginGetRequestStream, req.EndGetRequestStream)
                 .Invoke()
-                .SelectMany(stream =>
-                {
-                    // POSTデータ
-                    var postData = Encoding.UTF8.GetBytes(postDataStr);
-
-                    // 書き込み
-                    stream.Write(postData, 0, postData.Length);
-
-                    // ストリームを閉じる
-                    stream.Close();
-
-                    // 連結
-                    return
-                        Observable
-                        .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
-                        .Invoke();
-                })
-                .Select<WebResponse, RegisterNotificationChannelResult>(res =>
-                {
-                    // ストリームを取得
-                    Stream stream = res.GetResponseStream();
-                    if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+                .SelectMany
+                (
+                    stream =>
                     {
-                        stream = new GZipInputStream(stream);
+                        // POSTデータ
+                        var postData = Encoding.UTF8.GetBytes(postDataStr);
+
+                        // 書き込み
+                        stream.Write(postData, 0, postData.Length);
+
+                        // ストリームを閉じる
+                        stream.Close();
+
+                        // 連結
+                        return
+                            Observable
+                            .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
+                            .Invoke();
                     }
+                )
+                .Select<WebResponse, RegisterNotificationChannelResult>
+                (
+                    res =>
+                    {
+                        // ストリームを取得
+                        Stream stream = res.GetResponseStream();
+                        if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+                        {
+                            stream = new GZipInputStream(stream);
+                        }
 
-                    // シリアライズ
-                    DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(RegisterNotificationChannelResult));
+                        // シリアライズ
+                        DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(RegisterNotificationChannelResult));
 
-                    // データ取得
-                    var result = (RegisterNotificationChannelResult)serializer.ReadObject(stream);
+                        // データ取得
+                        var result = (RegisterNotificationChannelResult)serializer.ReadObject(stream);
 
-                    // ストリームを閉じる
-                    stream.Close();
+                        // ストリームを閉じる
+                        stream.Close();
 
-                    // 結果
-                    return result;
-                }
+                        // 結果
+                        return result;
+                    }
                 )
                 .ObserveOnDispatcher()
-                .Subscribe(
+                .Subscribe
+                (
                     s2 =>
                     {
                         callback(s2, null);
                     },
                     e2 =>
                     {
-                        notificationChannel.Close();
-                        callback(null, e2);
+                        uri = isNewChannel ? API.DeviceRegisterFallback : API.DeviceUpdateFallback;
+                        System.Diagnostics.Debug.WriteLine(uri);
+                        req = WebRequest.CreateHttp(uri);
+                        req.UserAgent = Constants.Net.UserAgent;
+                        req.Headers[HttpRequestHeader.AcceptEncoding] = "gzip";
+                        req.Method = "POST";
+                        req.ContentType = "application/x-www-form-urlencoded";
+
+                        Observable
+                        .FromAsyncPattern<Stream>(req.BeginGetRequestStream, req.EndGetRequestStream)
+                        .Invoke()
+                        .SelectMany
+                        (
+                            stream =>
+                            {
+                                // POSTデータ
+                                var postData = Encoding.UTF8.GetBytes(postDataStr);
+
+                                // 書き込み
+                                stream.Write(postData, 0, postData.Length);
+
+                                // ストリームを閉じる
+                                stream.Close();
+
+                                // 連結
+                                return
+                                    Observable
+                                    .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
+                                    .Invoke();
+                            }
+                        )
+                        .Select<WebResponse, RegisterNotificationChannelResult>
+                        (
+                            res =>
+                            {
+                                // ストリームを取得
+                                Stream stream = res.GetResponseStream();
+                                if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+                                {
+                                    stream = new GZipInputStream(stream);
+                                }
+
+                                // シリアライズ
+                                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(RegisterNotificationChannelResult));
+                                var result = (RegisterNotificationChannelResult)serializer.ReadObject(stream);
+
+                                // ストリームを閉じる
+                                stream.Close();
+
+                                // 結果
+                                return result;
+                            }
+                        )
+                        .ObserveOnDispatcher()
+                        .Subscribe
+                        (
+                            s3 =>
+                            {
+                                callback(s3, null);
+                            },
+                            e3 =>
+                            {
+                                notificationChannel.Close();
+                                callback(null, e3);
+                            }
+                        );
                     }
                 );
             };
@@ -277,54 +357,123 @@ namespace NanaphoNews.Services
                 Observable
                 .FromAsyncPattern<Stream>(req.BeginGetRequestStream, req.EndGetRequestStream)
                 .Invoke()
-                .SelectMany(stream =>
-                {
-                    // POSTデータ
-                    var postData = Encoding.UTF8.GetBytes(postDataStr);
-
-                    // 書き込み
-                    stream.Write(postData, 0, postData.Length);
-
-                    // ストリームを閉じる
-                    stream.Close();
-
-                    // 連結
-                    return
-                        Observable
-                        .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
-                        .Invoke();
-                })
-                .Select<WebResponse, UnregisterNotificationChannelResult>(res =>
-                {
-                    // ストリームを取得
-                    Stream stream = res.GetResponseStream();
-                    if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+                .SelectMany
+                (
+                    stream =>
                     {
-                        stream = new GZipInputStream(stream);
+                        // POSTデータ
+                        var postData = Encoding.UTF8.GetBytes(postDataStr);
+
+                        // 書き込み
+                        stream.Write(postData, 0, postData.Length);
+
+                        // ストリームを閉じる
+                        stream.Close();
+
+                        // 連結
+                        return
+                            Observable
+                            .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
+                            .Invoke();
                     }
+                )
+                .Select<WebResponse, UnregisterNotificationChannelResult>
+                (
+                    res =>
+                    {
+                        // ストリームを取得
+                        Stream stream = res.GetResponseStream();
+                        if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+                        {
+                            stream = new GZipInputStream(stream);
+                        }
 
-                    // シリアライズ
-                    DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(UnregisterNotificationChannelResult));
+                        // シリアライズ
+                        DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(UnregisterNotificationChannelResult));
+                        var result = (UnregisterNotificationChannelResult)serializer.ReadObject(stream);
 
-                    // データ取得
-                    var result = (UnregisterNotificationChannelResult)serializer.ReadObject(stream);
+                        // ストリームを閉じる
+                        stream.Close();
 
-                    // ストリームを閉じる
-                    stream.Close();
-
-                    // 結果
-                    return result;
-                }
+                        // 結果
+                        return result;
+                    }
                 )
                 .ObserveOnDispatcher()
-                .Subscribe(
+                .Subscribe
+                (
                     s2 =>
                     {
                         callback(s2, null);
                     },
                     e2 =>
                     {
-                        callback(null, e2);
+                        uri = API.DeviceUnregisterFallback;
+                        System.Diagnostics.Debug.WriteLine(uri);
+                        req = WebRequest.CreateHttp(uri);
+                        req.UserAgent = Constants.Net.UserAgent;
+                        req.Headers[HttpRequestHeader.AcceptEncoding] = "gzip";
+                        req.Method = "POST";
+                        req.ContentType = "application/x-www-form-urlencoded";
+
+                        Observable
+                        .FromAsyncPattern<Stream>(req.BeginGetRequestStream, req.EndGetRequestStream)
+                        .Invoke()
+                        .SelectMany
+                        (
+                            stream =>
+                            {
+                                // POSTデータ
+                                var postData = Encoding.UTF8.GetBytes(postDataStr);
+
+                                // 書き込み
+                                stream.Write(postData, 0, postData.Length);
+
+                                // ストリームを閉じる
+                                stream.Close();
+
+                                // 連結
+                                return
+                                    Observable
+                                    .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
+                                    .Invoke();
+                            }
+                        )
+                        .Select<WebResponse, UnregisterNotificationChannelResult>
+                        (
+                            res =>
+                            {
+                                // ストリームを取得
+                                Stream stream = res.GetResponseStream();
+                                if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+                                {
+                                    stream = new GZipInputStream(stream);
+                                }
+
+                                // シリアライズ
+                                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(UnregisterNotificationChannelResult));
+                                var result = (UnregisterNotificationChannelResult)serializer.ReadObject(stream);
+
+                                // ストリームを閉じる
+                                stream.Close();
+
+                                // 結果
+                                return result;
+                            }
+                        )
+                        .ObserveOnDispatcher()
+                        .Subscribe
+                        (
+                            s3 =>
+                            {
+                                callback(s3, null);
+                            },
+                            e3 =>
+                            {
+                                //callback(null, e3);
+                                callback(null, null);
+                            }
+                        );
                     }
                 );
             }
@@ -344,13 +493,17 @@ namespace NanaphoNews.Services
             public string StatusName { get; set; }
         }
 
-        public void UpdateNotificationChannel(string uuid, string langCode, int[] channelIds, bool resetUnreads, Action<UpdateNotificationChannelResult, Exception> callback)
+        public void UpdateNotificationChannel(string uuid, string version, string langCode, int[] channelIds, bool resetUnreads, Action<UpdateNotificationChannelResult, Exception> callback)
         {
             System.Diagnostics.Debug.WriteLine("UpdateNotificationChannel");
             string uri = API.DeviceUpdate;
             System.Diagnostics.Debug.WriteLine(uri);
             string postDataStr;
             postDataStr = "uuid=" + HttpUtility.UrlEncode(uuid);
+            if (version != null)
+            {
+                postDataStr += "&version=" + version;
+            }
             if (langCode != null)
             {
                 postDataStr += "&language_code=" + langCode;
@@ -372,53 +525,121 @@ namespace NanaphoNews.Services
             Observable
             .FromAsyncPattern<Stream>(req.BeginGetRequestStream, req.EndGetRequestStream)
             .Invoke()
-            .SelectMany(stream =>
-            {
-                // POSTデータ
-                var postData = Encoding.UTF8.GetBytes(postDataStr);
-
-                // 書き込み
-                stream.Write(postData, 0, postData.Length);
-
-                // ストリームを閉じる
-                stream.Close();
-
-                // 連結
-                return
-                    Observable
-                    .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
-                    .Invoke();
-            })
-            .Select(res =>
-            {
-                // ストリームを取得
-                Stream stream = res.GetResponseStream();
-                if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+            .SelectMany
+            (
+                stream =>
                 {
-                    stream = new GZipInputStream(stream);
+                    // POSTデータ
+                    var postData = Encoding.UTF8.GetBytes(postDataStr);
+
+                    // 書き込み
+                    stream.Write(postData, 0, postData.Length);
+
+                    // ストリームを閉じる
+                    stream.Close();
+
+                    // 連結
+                    return
+                        Observable
+                        .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
+                        .Invoke();
                 }
+            )
+            .Select
+            (
+                res =>
+                {
+                    // ストリームを取得
+                    Stream stream = res.GetResponseStream();
+                    if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+                    {
+                        stream = new GZipInputStream(stream);
+                    }
 
-                // シリアライズ
-                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(UpdateNotificationChannelResult));
+                    // シリアライズ
+                    DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(UpdateNotificationChannelResult));
+                    var result = (UpdateNotificationChannelResult)serializer.ReadObject(stream);
 
-                // データ取得
-                var result = (UpdateNotificationChannelResult)serializer.ReadObject(stream);
+                    // ストリームを閉じる
+                    stream.Close();
 
-                // ストリームを閉じる
-                stream.Close();
-
-                // 結果
-                return result;
-            })
+                    // 結果
+                    return result;
+                }
+            )
             .ObserveOnDispatcher()
-            .Subscribe(
+            .Subscribe
+            (
                 s2 =>
                 {
                     callback(s2, null);
                 },
                 e2 =>
                 {
-                    callback(null, e2);
+                    uri = API.DeviceUpdateFallback;
+                    System.Diagnostics.Debug.WriteLine(uri);
+                    req = WebRequest.CreateHttp(uri);
+                    req.UserAgent = Constants.Net.UserAgent;
+                    req.Headers[HttpRequestHeader.AcceptEncoding] = "gzip";
+                    req.Method = "POST";
+                    req.ContentType = "application/x-www-form-urlencoded";
+
+                    Observable
+                    .FromAsyncPattern<Stream>(req.BeginGetRequestStream, req.EndGetRequestStream)
+                    .Invoke()
+                    .SelectMany
+                    (
+                        stream =>
+                        {
+                            // POSTデータ
+                            var postData = Encoding.UTF8.GetBytes(postDataStr);
+
+                            // 書き込み
+                            stream.Write(postData, 0, postData.Length);
+
+                            // ストリームを閉じる
+                            stream.Close();
+
+                            // 連結
+                            return
+                                Observable
+                                .FromAsyncPattern<WebResponse>(req.BeginGetResponse, req.EndGetResponse)
+                                .Invoke();
+                        }
+                    )
+                    .Select
+                    (
+                        res =>
+                        {
+                            // ストリームを取得
+                            Stream stream = res.GetResponseStream();
+                            if (string.Equals("gzip", res.Headers[HttpRequestHeader.ContentEncoding], StringComparison.OrdinalIgnoreCase))
+                            {
+                                stream = new GZipInputStream(stream);
+                            }
+
+                            // シリアライズ
+                            DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(UpdateNotificationChannelResult));
+                            var result = (UpdateNotificationChannelResult)serializer.ReadObject(stream);
+
+                            // ストリームを閉じる
+                            stream.Close();
+
+                            // 結果
+                            return result;
+                        }
+                    )
+                    .ObserveOnDispatcher()
+                    .Subscribe(
+                        s3 =>
+                        {
+                            callback(s3, null);
+                        },
+                        e3 =>
+                        {
+                            callback(null, e3);
+                        }
+                    );
                 }
             );
         }

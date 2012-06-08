@@ -9,8 +9,8 @@ namespace NanaphoNews.Services
         void GetFeedItems(int page, Action<NanaphoNewsService.GetFeedItemsResult, Exception> callback);
     
         // Notification
-        void RegisterNotificationChannel(string langCode, Action<NanaphoNewsService.RegisterNotificationChannelResult, Exception> callback);
+        void RegisterNotificationChannel(string version, string langCode, Action<NanaphoNewsService.RegisterNotificationChannelResult, Exception> callback);
         void UnregisterNotificationChannel(string uuid, Action<NanaphoNewsService.UnregisterNotificationChannelResult, Exception> callback);
-        void UpdateNotificationChannel(string uuid, string langCode, int[] channelIds, bool resetUnreads, Action<NanaphoNewsService.UpdateNotificationChannelResult, Exception> callback);
+        void UpdateNotificationChannel(string uuid, string version, string langCode, int[] channelIds, bool resetUnreads, Action<NanaphoNewsService.UpdateNotificationChannelResult, Exception> callback);
     }
 }
