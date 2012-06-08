@@ -38,4 +38,47 @@ namespace NanaphoNews.Converters
             throw new NotImplementedException();
         }
     }
+
+
+    public class VisibilityToBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null)
+            {
+                return false;
+            }
+            if (value is Visibility)
+            {
+                return ((Visibility)value == Visibility.Visible ? true : false);
+            }
+            throw new ArgumentException("Type of the value is incorrect.");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class InverseVisibilityToBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null)
+            {
+                return true;
+            }
+            if (value is Visibility)
+            {
+                return ((Visibility)value == Visibility.Visible ? false : true);
+            }
+            throw new ArgumentException("Type of the value is incorrect.");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
