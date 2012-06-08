@@ -1,0 +1,89 @@
+﻿<phone:PhoneApplicationPage 
+    x:Class="NanaphoNews.Views.WebPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+    xmlns:ic="clr-namespace:Microsoft.Expression.Interactivity.Core;assembly=Microsoft.Expression.Interactions" 
+    xmlns:yamac="clr-namespace:Yamac.Controls"
+    xmlns:helpers="clr-namespace:Helpers"
+    mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="800"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    shell:SystemTray.IsVisible="False"
+    DataContext="{Binding Source={StaticResource Locator}, Path=WebPageViewModel}"
+    BackKeyPress="PhoneApplicationPage_BackKeyPress"
+    >
+
+    <!-- ページ切り替え効果 -->
+    <toolkit:TransitionService.NavigationInTransition>
+        <toolkit:NavigationInTransition>
+            <toolkit:NavigationInTransition.Backward>
+                <toolkit:SlideTransition Mode="SlideRightFadeIn"/>
+            </toolkit:NavigationInTransition.Backward>
+            <toolkit:NavigationInTransition.Forward>
+                <toolkit:SlideTransition Mode="SlideLeftFadeIn"/>
+            </toolkit:NavigationInTransition.Forward>
+        </toolkit:NavigationInTransition>
+    </toolkit:TransitionService.NavigationInTransition>
+    <toolkit:TransitionService.NavigationOutTransition>
+        <toolkit:NavigationOutTransition>
+            <toolkit:NavigationOutTransition.Backward>
+                <toolkit:SlideTransition Mode="SlideRightFadeOut"/>
+            </toolkit:NavigationOutTransition.Backward>
+            <toolkit:NavigationOutTransition.Forward>
+                <toolkit:SlideTransition Mode="SlideLeftFadeOut"/>
+            </toolkit:NavigationOutTransition.Forward>
+        </toolkit:NavigationOutTransition>
+    </toolkit:TransitionService.NavigationOutTransition>
+
+    <!-- ルート -->
+    <Grid x:Name="LayoutRoot" Background="Transparent">
+        <!-- ブラウザー -->
+        <yamac:WebBrowser
+            Grid.Row="0"
+            x:Name="MainWebBrowser"
+            Source="{Binding WebPageUri}"
+            NavigationFailed="MainWebBrowser_NavigationFailed"
+            />
+
+        <!-- ローディングインジケーター -->
+        <toolkit:PerformanceProgressBar
+            Grid.Row="0"
+            Name="MainProgressBar"
+            Height="4"
+            VerticalAlignment="Top"
+            IsIndeterminate="{Binding IsBusy, ElementName=MainWebBrowser}"
+            />
+
+        <!-- アプリケーションバー -->
+        <helpers:BindableApplicationBar IsVisible="True" IsMenuEnabled="True" Mode="Minimized">
+            <helpers:BindableApplicationBarMenuItem Text="{Binding Path=Resources.WebPage_AppBar_MenuItemText_OpenWithBrowser, Source={StaticResource LocalizedResources}}">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="Click">
+                        <i:InvokeCommandAction
+                            Command="{Binding OpenWithBrowserCommand}"
+                        />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </helpers:BindableApplicationBarMenuItem>
+            <helpers:BindableApplicationBarMenuItem Text="{Binding Path=Resources.WebPage_AppBar_MenuItemText_ShareThePage, Source={StaticResource LocalizedResources}}">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="Click">
+                        <i:InvokeCommandAction
+                            Command="{Binding ShareThePageCommand}"
+                        />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </helpers:BindableApplicationBarMenuItem>
+        </helpers:BindableApplicationBar>
+    </Grid>
+
+</phone:PhoneApplicationPage>
